@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tulip Garden for You</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --btn-bg: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --stem-color: #3b7b3b; /* A natural green */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* The canvas where tulips are drawn */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UI Overlay - Minimalist */
+        .overlay {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* Allows clicks to pass to canvas */
+        }
+
+        .top-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .center-ui {
+            text-align: center;
+        }
+
+        .center-ui p {
+            margin: 0;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        .center-ui h1 {
+            font-size: 3.5rem;
+            margin: 10px 0;
+            font-weight: 700;
+            background: linear-gradient(to right, #f8a5c2, #786fa6); /* Original pink-to-purple gradient */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            pointer-events: auto; /* Re-enable for buttons */
+        }
+
+        button {
+            background: var(--btn-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(8px); /* Modern frosted-glass effect */
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-note {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 0.7rem;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="gardenCanvas"></canvas>
+
+    <div class="top-left">Tulip Garden for You</div>
+
+    <div class="overlay">
+        <div class="center-ui">
+            <p>Click Anywhere to</p>
+            <h1>Plant Tulips</h1>
+            <p>🌷 or turn on Auto Bloom</p>
+            
+            <div class="controls">
+                <button onclick="clearGarden()">🌷 Clear Garden</button>
+                <button id="autoBtn" onclick="toggleAutoBloom()">✨ Auto Bloom</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">Made with ❤️ | Tap to grow</div>
+
+    <script>
+        const canvas = document.getElementById('gardenCanvas');
+        const ctx = canvas.getContext('2d');
+        const autoBtn = document.getElementById('autoBtn');
+
+        let tulips = [];
+        let autoBloomActive = false;
+        let autoInterval;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Tulip {
+            constructor(x, y_soil) {
+                this.x = x;
+                this.y_soil = y_soil;
+                this.stem_height = 0;
+                this.max_stem_height = Math.random() * 200 + 100;
+                this.flower_size = 0;
+                this.max_flower_size = Math.random() * 15 + 25;
+                this.petalCount = 3; // Basic cup with 3 prominent petals
+                this.growthSpeed = Math.random() * 1.5 + 1;
+                
+                // Random vivid colors for each tulip (full hue rotation)
+                this.head_hue = Math.random() * 360; 
+                this.head_color = `hsl(${this.head_hue}, 100%, 70%)`; 
+                this.inner_color = `hsl(${this.head_hue}, 100%, 85%)`; // Lighter inside
+                this.base_color = `hsl(${this.head_hue}, 80%, 40%)`; // Darker base
+
+                this.growthState = 'stem'; // 'stem' or 'flower'
+            }
+
+            draw() {
+                // Growth animation logic
+                if (this.growthState === 'stem') {
+                    if (this.stem_height < this.max_stem_height) {
+                        this.stem_height += this.growthSpeed * 1.2;
+                    } else {
+                        this.stem_height = this.max_stem_height;
+                        this.growthState = 'flower';
+                    }
+                } else if (this.growthState === 'flower') {
+                    if (this.flower_size < this.max_flower_size) {
+                        this.flower_size += this.growthSpeed * 0.4;
+                    } else {
+                        this.flower_size = this.max_flower_size;
+                        this.growthState = 'grown';
+                    }
+                }
+
+                ctx.save();
+                ctx.translate(this.x, this.y_soil);
+
+                // --- 1. Draw Stem and Leaves ---
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#3b7b3b'; 
+                ctx.beginPath();
+                ctx.moveTo(0, 0); // Soil
+                ctx.lineTo(0, -this.stem_height); // Growth up
+                ctx.stroke();
+
+                // Draw simple foliage along the stem
+                if (this.stem_height > 50) {
+                    ctx.save();
+                    ctx.translate(0, -50);
+                    ctx.fillStyle = '#4c9e4c';
+                    ctx.beginPath();
+                    ctx.ellipse(-5, 0, 8, 30, Math.PI / 4, 0, Math.PI * 2); // Leaf 1
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(5, -15, 6, 25, -Math.PI / 3, 0, Math.PI * 2); // Leaf 2
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // --- 2. Draw Tulip Head ---
+                if (this.stem_height >= this.max_stem_height) {
+                    // Translate to the top of the stem
+                    ctx.translate(0, -this.max_stem_height);
+
+                    // A basic, stacked tulip cup structure
+                    // Overlapping layered petals (simplistic representation)
+                    
+                    // --- Layer 1: Background Petals (two main sides) ---
+                    ctx.fillStyle = this.head_color;
+                    for (let i = 0; i < 2; i++) {
+                        ctx.save();
+                        ctx.rotate(i === 0 ? -Math.PI / 8 : Math.PI / 8); // Spread petals
+                        this.drawPetal(this.flower_size * 0.9, this.flower_size);
+                        ctx.restore();
+                    }
+
+                    // --- Layer 2: Main Inner Cup (Overlapping center) ---
+                    ctx.fillStyle = this.inner_color;
+                    this.drawPetal(this.flower_size, this.flower_size * 1.1, true); // True = centered, wider
+
+                    // --- Layer 3: Central Stamen Details (Simple arcs) ---
+                    ctx.strokeStyle = '#fff9ae';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.flower_size / 6, Math.PI / 2, Math.PI); // Stamen detail
+                    ctx.stroke();
+
+                    // --- Layer 4: Darkened Base of the cup ---
+                    ctx.fillStyle = this.base_color;
+                    ctx.beginPath();
+                    ctx.arc(0, this.flower_size / 2, this.flower_size / 3, 0, Math.PI);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            // Custom method to draw a realistic curved petal shape
+            drawPetal(width, height, isCentered = false) {
+                ctx.beginPath();
+                if (isCentered) {
+                    // One wide, central cup
+                    ctx.moveTo(0, 0);
+                    ctx.bezierCurveTo(-width / 1.8, height / 2, -width / 1.8, height, 0, height);
+                    ctx.bezierCurveTo(width / 1.8, height, width / 1.8, height / 2, 0, 0);
+                } else {
+                    // Side petals
+                    ctx.moveTo(0, 0);
+                    ctx.bezierCurveTo(-width / 3, height / 2, -width / 3, height, 0, height);
+                    ctx.bezierCurveTo(width / 2, height, width / 2, height / 2, 0, 0);
+                }
+                ctx.fill();
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            tulips.forEach(tulip => tulip.draw());
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            // Plant from the ground up: e.clientX, e.clientY are soil coordinates
+            tulips.push(new Tulip(e.clientX, e.clientY));
+        });
+
+        function clearGarden() {
+            tulips = [];
+        }
+
+        function toggleAutoBloom() {
+            autoBloomActive = !autoBloomActive;
+            if (autoBloomActive) {
+                autoBtn.style.background = "rgba(255, 255, 255, 0.3)";
+                // Drop a tulip randomly in the lower half of the screen
+                autoInterval = setInterval(() => {
+                    tulips.push(new Tulip(Math.random() * canvas.width, Math.random() * canvas.height * 0.6 + canvas.height * 0.4));
+                }, 300);
+            } else {
+                autoBtn.style.background = "var(--btn-bg)";
+                clearInterval(autoInterval);
+            }
+        }
+
+        animate();
+    </script>
+</body>
+</html>
