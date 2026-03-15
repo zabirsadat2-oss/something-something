@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobile Tulip Garden</title>
+    <title>Lily Garden</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -18,9 +18,9 @@
             height: 100%;
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden; /* Prevents scrolling on mobile */
-            touch-action: none; /* Prevents pull-to-refresh while tapping */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+            touch-action: none;
         }
 
         canvas {
@@ -28,7 +28,6 @@
             top: 0;
             left: 0;
             z-index: 1;
-            display: block;
         }
 
         .overlay {
@@ -40,8 +39,8 @@
             justify-content: center;
             align-items: center;
             pointer-events: none;
+            text-align: center;
             padding: 0 20px;
-            box-sizing: border-box;
         }
 
         .top-left {
@@ -51,14 +50,9 @@
             font-size: 0.8rem;
             opacity: 0.6;
             letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
-        .center-ui {
-            text-align: center;
-            width: 100%;
-        }
-
-        /* Responsive typography */
         .center-ui p {
             margin: 0;
             font-size: clamp(0.9rem, 4vw, 1.1rem);
@@ -66,47 +60,47 @@
         }
 
         .center-ui h1 {
-            /* clamp(min, preferred, max) ensures it fits mobile and desktop */
-            font-size: clamp(2.2rem, 10vw, 3.5rem);
+            font-size: clamp(2.5rem, 12vw, 4rem);
             margin: 10px 0;
             font-weight: 800;
-            background: linear-gradient(to right, #f8a5c2, #a29bfe);
+            background: linear-gradient(to bottom, #ffdde1, #ee9ca7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 4px 10px rgba(238, 156, 167, 0.3));
         }
 
         .controls {
-            margin-top: 20px;
+            margin-top: 25px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
             pointer-events: auto;
-            flex-wrap: wrap;
-            justify-content: center;
         }
 
         button {
             background: var(--btn-bg);
             border: 1px solid rgba(255,255,255,0.15);
             color: white;
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 30px;
             cursor: pointer;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            transition: transform 0.2s;
             font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
 
         button:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.2);
         }
 
         .footer-note {
             position: absolute;
             bottom: env(safe-area-inset-bottom, 20px);
             font-size: 0.7rem;
-            opacity: 0.4;
+            opacity: 0.3;
         }
     </style>
 </head>
@@ -114,20 +108,20 @@
 
     <canvas id="gardenCanvas"></canvas>
 
-    <div class="top-left">Flower Garden for You</div>
+    <div class="top-left">Lily Garden for You</div>
 
     <div class="overlay">
         <div class="center-ui">
-            <p>Tap anywhere to</p>
-            <h1>Plant Tulips</h1>
-            <p>🌷 or use Auto Bloom</p>
+            <p>Tap to plant a</p>
+            <h1>Wild Lily</h1>
+            <p>✨ or auto-generate your garden</p>
             
             <div class="controls">
                 <button onclick="clearGarden()">Clear</button>
                 <button id="autoBtn" onclick="toggleAutoBloom()">Auto Bloom</button>
             </div>
         </div>
-        <div class="footer-note">Tap screen to grow</div>
+        <div class="footer-note">Optimized for Mobile Taps</div>
     </div>
 
     <script>
@@ -135,7 +129,7 @@
         const ctx = canvas.getContext('2d');
         const autoBtn = document.getElementById('autoBtn');
 
-        let tulips = [];
+        let flowers = [];
         let autoBloomActive = false;
         let autoInterval;
 
@@ -146,18 +140,17 @@
         window.addEventListener('resize', resize);
         resize();
 
-        class Tulip {
+        class Lily {
             constructor(x, y) {
                 this.x = x;
                 this.y_soil = y;
                 this.stem_h = 0;
-                // Scale height based on screen size (shorter on mobile)
-                const heightFactor = window.innerHeight < 600 ? 100 : 200;
-                this.max_stem_h = Math.random() * heightFactor + 50;
+                const hLimit = window.innerHeight < 600 ? 120 : 250;
+                this.max_stem_h = Math.random() * hLimit + 80;
                 this.flower_size = 0;
-                this.max_flower_size = Math.random() * 10 + 15;
-                this.hue = Math.random() * 360;
-                this.growthSpeed = Math.random() * 2 + 1;
+                this.max_flower_size = Math.random() * 15 + 25;
+                this.hue = Math.random() * 360; // Any color lily
+                this.growthSpeed = Math.random() * 3 + 2;
                 this.state = 'stem';
             }
 
@@ -166,52 +159,89 @@
                     if (this.stem_h < this.max_stem_h) this.stem_h += this.growthSpeed;
                     else this.state = 'flower';
                 } else if (this.state === 'flower') {
-                    if (this.flower_size < this.max_flower_size) this.flower_size += 0.5;
+                    if (this.flower_size < this.max_flower_size) this.flower_size += 0.8;
                 }
 
                 ctx.save();
                 ctx.translate(this.x, this.y_soil);
 
-                // Draw Stem
-                ctx.strokeStyle = '#417d41';
-                ctx.lineWidth = 2;
+                // --- Draw Stem ---
+                ctx.strokeStyle = '#2d5a27';
+                ctx.lineWidth = 2.5;
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.lineTo(0, -this.stem_h);
+                // Slight curve to the stem for realism
+                ctx.quadraticCurveTo(10, -this.stem_h/2, 0, -this.stem_h);
                 ctx.stroke();
 
-                // Draw small leaves
-                if (this.stem_h > 30) {
-                    ctx.fillStyle = '#417d41';
-                    ctx.beginPath();
-                    ctx.ellipse(-4, -20, 5, 15, Math.PI/4, 0, Math.PI*2);
-                    ctx.fill();
+                // --- Draw Long Lily Leaves ---
+                if (this.stem_h > 40) {
+                    this.drawLeaf(-5, -this.stem_h * 0.3, -0.5);
+                    this.drawLeaf(5, -this.stem_h * 0.5, 0.5);
                 }
 
-                // Draw Tulip Head
-                if (this.state !== 'stem' || this.stem_h >= this.max_stem_h) {
-                    const headY = -this.stem_h;
-                    ctx.translate(0, headY);
+                // --- Draw Lily Head ---
+                if (this.state === 'flower' || this.stem_h >= this.max_stem_h) {
+                    ctx.translate(0, -this.stem_h);
                     
-                    ctx.fillStyle = `hsl(${this.hue}, 80%, 60%)`;
-                    // Left petal
-                    this.drawPetal(-this.flower_size/2, 0, this.flower_size, -Math.PI/10);
-                    // Right petal
-                    this.drawPetal(this.flower_size/2, 0, this.flower_size, Math.PI/10);
-                    // Center petal
-                    ctx.fillStyle = `hsl(${this.hue}, 80%, 70%)`;
-                    this.drawPetal(0, 0, this.flower_size * 1.1, 0);
+                    const size = this.flower_size;
+                    
+                    // Draw 6 petals (Lilies have 6 tepals)
+                    for (let i = 0; i < 6; i++) {
+                        ctx.save();
+                        ctx.rotate((i * 60) * Math.PI / 180);
+                        this.drawPetal(size);
+                        ctx.restore();
+                    }
+
+                    // --- Draw Stamens (the "whiskers") ---
+                    if (size > 10) {
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1;
+                        for (let i = 0; i < 5; i++) {
+                            ctx.save();
+                            ctx.rotate((i * 72) * Math.PI / 180);
+                            ctx.beginPath();
+                            ctx.moveTo(0, 0);
+                            ctx.lineTo(0, -size * 0.6);
+                            ctx.stroke();
+                            // Pollen tip
+                            ctx.fillStyle = '#4a2c2a';
+                            ctx.fillRect(-2, -size * 0.65, 4, 2);
+                            ctx.restore();
+                        }
+                    }
                 }
                 ctx.restore();
             }
 
-            drawPetal(x, y, size, rotation) {
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(rotation);
+            drawPetal(s) {
+                // A lily petal is long, tapered, and slightly wider in the middle
+                ctx.beginPath();
+                ctx.fillStyle = `hsl(${this.hue}, 80%, 70%)`;
+                ctx.moveTo(0, 0);
+                // Left curve
+                ctx.bezierCurveTo(-s/2, -s/2, -s/4, -s, 0, -s);
+                // Right curve
+                ctx.bezierCurveTo(s/4, -s, s/2, -s/2, 0, 0);
+                ctx.fill();
+                
+                // Central vein detail
+                ctx.strokeStyle = `hsl(${this.hue}, 80%, 50%)`;
+                ctx.lineWidth = 0.5;
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(-size, -size, size, -size, 0, 0);
+                ctx.lineTo(0, -s * 0.8);
+                ctx.stroke();
+            }
+
+            drawLeaf(x, y, rot) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+                ctx.fillStyle = '#3a7233';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 4, 25, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.restore();
             }
@@ -219,40 +249,35 @@
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            tulips.forEach(t => t.draw());
+            flowers.forEach(f => f.draw());
             requestAnimationFrame(animate);
         }
 
-        // Handle both Mouse and Touch
-        function handlePlant(e) {
-            // Prevent button clicks from planting a flower behind them
+        function handleInteraction(e) {
             if (e.target.tagName === 'BUTTON') return;
-            
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            tulips.push(new Tulip(clientX, clientY));
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            const y = e.touches ? e.touches[0].clientY : e.clientY;
+            flowers.push(new Lily(x, y));
         }
 
-        window.addEventListener('mousedown', handlePlant);
-        window.addEventListener('touchstart', handlePlant);
+        window.addEventListener('mousedown', handleInteraction);
+        window.addEventListener('touchstart', handleInteraction);
 
         function clearGarden() {
-            tulips = [];
+            flowers = [];
         }
 
         function toggleAutoBloom() {
             autoBloomActive = !autoBloomActive;
             if (autoBloomActive) {
-                autoBtn.innerText = "Stop Bloom";
-                autoBtn.style.background = "rgba(255, 255, 255, 0.4)";
+                autoBtn.innerText = "Stop";
                 autoInterval = setInterval(() => {
                     const rx = Math.random() * canvas.width;
-                    const ry = Math.random() * (canvas.height * 0.7) + (canvas.height * 0.3);
-                    tulips.push(new Tulip(rx, ry));
-                }, 400);
+                    const ry = Math.random() * (canvas.height * 0.7) + (canvas.height * 0.2);
+                    flowers.push(new Lily(rx, ry));
+                }, 500);
             } else {
                 autoBtn.innerText = "Auto Bloom";
-                autoBtn.style.background = "var(--btn-bg)";
                 clearInterval(autoInterval);
             }
         }
